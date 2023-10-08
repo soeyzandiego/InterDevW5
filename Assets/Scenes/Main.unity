@@ -236,6 +236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 318d64e527a1a9b40a00c5479a117016, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  delayTime: 0.5
   playerHandCount: 3
   playerPos: {fileID: 1623536918}
 --- !u!4 &824462105
@@ -314,11 +315,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cardPrefab: {fileID: 7032917546854388774, guid: a21235e74bc1e1c4cbe8f639ce41a884, type: 3}
-  cardFaces:
-  - {fileID: 21300000, guid: 5de506984a2d74a439c2d05b9667bf80, type: 3}
-  - {fileID: 21300000, guid: e8d43b7ebce5c7c4dae14a6161027698, type: 3}
-  - {fileID: 21300000, guid: 379a6dc6f53f19140b2c82e20f0dbddd, type: 3}
-  cardAnimControllers: {fileID: 0}
+  cardTypes:
+  - {fileID: 11400000, guid: ec3ce2f2bd6ad2e46b4a35c2d0203c2d, type: 2}
+  - {fileID: 11400000, guid: 777cda850ebdcfa4eac005ffe1f02e27, type: 2}
+  - {fileID: 11400000, guid: 20074a8c7fa90bd4680785281e975e9a, type: 2}
   deckCount: 15
 --- !u!4 &1808901906
 Transform:

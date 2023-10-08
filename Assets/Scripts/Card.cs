@@ -59,7 +59,7 @@ public class Card : MonoBehaviour
     {
         value = _cardType.value;
         faceSprite = _cardType.faceSprite;
-        anim.runtimeAnimatorController = _cardType.animController;
+        //anim.runtimeAnimatorController = _cardType.animController;
     }
 
     public CardValue GetValue() { return value; }

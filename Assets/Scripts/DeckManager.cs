@@ -8,7 +8,7 @@ public class DeckManager : MonoBehaviour
     [SerializeField] CardType[] cardTypes;
     [SerializeField] int deckCount;
 
-    public static List<GameObject> deck = new List<GameObject>();
+    public static List<Card> deck = new List<Card>();
 
     void Start()
     {
@@ -17,11 +17,11 @@ public class DeckManager : MonoBehaviour
             GameObject newCard = Instantiate(cardPrefab, gameObject.transform);
             Card newCardScript = newCard.GetComponent<Card>();
             newCardScript.SetCardType(cardTypes[i % 3]);
-            deck.Add(newCard);
+            deck.Add(newCardScript);
         }   
     }
 
-    public List<GameObject> GetDeck()
+    public List<Card> GetDeck()
     {
         return deck;
     }
