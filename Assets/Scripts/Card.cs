@@ -13,7 +13,7 @@ public class Card : MonoBehaviour
 
     CardValue value;
 
-    static float moveSpeed = 0.04f; 
+    static float moveSpeed = 0.025f; 
 
     Sprite faceSprite;
     Sprite backSprite;
@@ -21,7 +21,9 @@ public class Card : MonoBehaviour
     SpriteRenderer sr;
     Animator anim;
 
-    bool mouseOver = false;
+    bool hovered = false;
+    bool faceUp = false;
+    [System.NonSerialized] public bool inHand = false;
     Vector3 targetPos;
 
     void Start()
@@ -34,19 +36,16 @@ public class Card : MonoBehaviour
 
     void Update()
     {
-        if (mouseOver) { sr.sprite = faceSprite; }
-
         transform.position = Vector3.Lerp(transform.position, targetPos, moveSpeed);
     }
 
-    void OnMouseDown()
-    {
-        mouseOver = true;   
-    }
+    void OnMouseEnter() { hovered = true; }
+    void OnMouseExit() { hovered = false; }
 
-    void Flip()
+    public void Flip()
     {
-
+        sr.sprite = faceSprite;
+        faceUp = !faceUp;
     }
 
     public void SetTargetPos(Vector3 newPos)
@@ -63,4 +62,6 @@ public class Card : MonoBehaviour
     }
 
     public CardValue GetValue() { return value; }
+
+    public bool IsHovered() { return hovered; }
 }
