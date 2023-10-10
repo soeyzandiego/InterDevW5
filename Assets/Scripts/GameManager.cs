@@ -18,7 +18,10 @@ public class GameManager : MonoBehaviour
     };
 
     [System.NonSerialized] public static GameState state; // does not actually get serialized anyways, but for consistency
+    [System.NonSerialized] public static int opponentScore;
+    [System.NonSerialized] public static int playerScore;
 
+    // stored cards
     [System.NonSerialized] public List<Card> playerHand = new List<Card>();
     [System.NonSerialized] public List<Card> opponentHand = new List<Card>();
     Card pOpponentCard; // played opponent card
@@ -37,9 +40,14 @@ public class GameManager : MonoBehaviour
 
     bool active = false;
 
+    AudioPlayer audioPlayer;
+    Resolver resolver;
+
     private void Start()
     {
         state = GameState.DEAL;
+        audioPlayer = FindObjectOfType<AudioPlayer>();
+        resolver = FindObjectOfType<Resolver>();
     }
 
     private void Update()
@@ -53,7 +61,7 @@ public class GameManager : MonoBehaviour
                     if (opponentHand.Count < playerHandCount) { StartCoroutine(DealCard(opponentHand)); }
                     // deal player
                     else if (playerHand.Count < playerHandCount) { StartCoroutine(DealCard(playerHand)); }
-                    else { StartCoroutine(WaitAndChangeState(GameState.OPPONENT)); }
+                    else { StartCoroutine(WaitAndChangeState(GameState.OPPONENT, delayTime)); }
                 }
             break;
 
@@ -67,7 +75,7 @@ public class GameManager : MonoBehaviour
                     cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, 1.2f, 0));
                     opponentHand.Remove(cardToPlay);
                     pOpponentCard = cardToPlay;
-                    StartCoroutine(WaitAndChangeState(GameState.PLAYER));
+                    StartCoroutine(WaitAndChangeState(GameState.PLAYER, delayTime));
                 }
                 
             break;
@@ -88,7 +96,7 @@ public class GameManager : MonoBehaviour
                             cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, -1.2f, 0));
                             playerHand.Remove(cardToPlay);
                             pPlayerCard = cardToPlay;
-                            StartCoroutine(WaitAndChangeState(GameState.RESOLVE));
+                            StartCoroutine(WaitAndChangeState(GameState.RESOLVE, delayTime));
                             break;
                         }
                     }
@@ -104,8 +112,8 @@ public class GameManager : MonoBehaviour
                 {
                     active = true;
                     pOpponentCard.Flip(true);
-                    Resolver.Resolve(pOpponentCard, pPlayerCard);
-                    StartCoroutine(WaitAndChangeState(GameState.DISCARD));
+                    resolver.Resolve(pOpponentCard, pPlayerCard);
+                    StartCoroutine(WaitAndChangeState(GameState.DISCARD, 1f));
                 }
             break;
 
@@ -136,6 +144,14 @@ public class GameManager : MonoBehaviour
                 {
                     if (!active) { StartCoroutine(DiscardCard(playerHand)); }
                 }
+                else
+                {
+                    if (!active)
+                    {
+                        if (DeckManager.deck.Count > 0) { StartCoroutine(WaitAndChangeState(GameState.DEAL, delayTime)); }
+                        else { StartCoroutine(WaitAndChangeState(GameState.RESHUFFLE, delayTime)); }
+                    }
+                }
                 
             break;
         }
@@ -158,6 +174,8 @@ public class GameManager : MonoBehaviour
             handToDeal.Add(nextCard);
             if (handToDeal == playerHand) { nextCard.inHand = true; }
             DeckManager.deck.Remove(nextCard);
+
+            audioPlayer.PlayDrawSound();
             yield return new WaitForSecondsRealtime(delayTime);
         }
         active = false;
@@ -175,6 +193,8 @@ public class GameManager : MonoBehaviour
             discardCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.discardPile.Count;
             DeckManager.discardPile.Add(discardCard);
             targetList.Remove(discardCard);
+
+            audioPlayer.PlayDrawSound();
             yield return new WaitForSecondsRealtime(delayTime);
         }
 
@@ -188,15 +208,17 @@ public class GameManager : MonoBehaviour
         targetCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count));
         targetCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.discardPile.Count;
         DeckManager.discardPile.Add(targetCard);
+
+        audioPlayer.PlayDrawSound();
         yield return new WaitForSecondsRealtime(delayTime);
 
         active = false;
     }
 
-    IEnumerator WaitAndChangeState(GameState newState)
+    IEnumerator WaitAndChangeState(GameState newState, float delay)
     {
         active = true;
-        yield return new WaitForSecondsRealtime(delayTime);
+        yield return new WaitForSecondsRealtime(delay);
         state = newState;
         active = false;
     }

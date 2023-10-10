@@ -13,12 +13,8 @@ public class Card : MonoBehaviour
 
     CardValue value;
 
-    static float moveSpeed = 0.025f; 
+    static float moveSpeed = 0.035f; 
 
-    Sprite faceSprite;
-    Sprite backSprite;
-
-    SpriteRenderer sr;
     Animator anim;
 
     bool hovered = false;
@@ -26,11 +22,14 @@ public class Card : MonoBehaviour
     [System.NonSerialized] public bool inHand = false;
     Vector3 targetPos;
 
+    void Awake()
+    {
+        // script execution order, anim returns null if assigned in Start
+        anim = GetComponent<Animator>();
+    }
+
     void Start()
     {
-        sr = GetComponent<SpriteRenderer>();
-        anim = GetComponent<Animator>();
-        backSprite = sr.sprite;
         targetPos = transform.position;
     }
 
@@ -45,9 +44,7 @@ public class Card : MonoBehaviour
     public void Flip(bool _faceUp)
     {
         faceUp = _faceUp;
-
-        if (faceUp) { sr.sprite = faceSprite; }
-        else { sr.sprite = backSprite; }
+        anim.SetBool("faceUp", faceUp);
     }
 
     public void SetTargetPos(Vector3 newPos)
@@ -59,8 +56,7 @@ public class Card : MonoBehaviour
     public void SetCardType(CardType _cardType)
     {
         value = _cardType.value;
-        faceSprite = _cardType.faceSprite;
-        //anim.runtimeAnimatorController = _cardType.animController;
+        anim.runtimeAnimatorController = _cardType.animController;
     }
 
     public CardValue GetValue() { return value; }

@@ -4,7 +4,18 @@ using UnityEngine;
 
 public class Resolver : MonoBehaviour
 {
-    public static void Resolve(Card opponentCard, Card playerCard)
+    [SerializeField] AudioClip winSound;
+    [SerializeField] AudioClip loseSound;
+    [SerializeField] AudioClip tieSound;
+
+    AudioPlayer audioPlayer;
+
+    void Start()
+    {
+        audioPlayer = FindObjectOfType<AudioPlayer>();
+    }
+
+    public void Resolve(Card opponentCard, Card playerCard)
     {
         if (opponentCard.GetValue() == Card.CardValue.ROCK)
         {
@@ -53,18 +64,20 @@ public class Resolver : MonoBehaviour
         }
     }
 
-    static void Tie()
+    void Tie()
     {
-
+        audioPlayer.PlaySound(tieSound);
     }
 
-    static void Win()
+    void Win()
     {
-
+        GameManager.playerScore++;
+        audioPlayer.PlaySound(winSound);
     }
 
-    static void Lose()
+    void Lose()
     {
-
+        GameManager.opponentScore++;
+        audioPlayer.PlaySound(loseSound);
     }
 }
