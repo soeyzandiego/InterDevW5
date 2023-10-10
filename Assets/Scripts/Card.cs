@@ -42,10 +42,12 @@ public class Card : MonoBehaviour
     void OnMouseEnter() { hovered = true; }
     void OnMouseExit() { hovered = false; }
 
-    public void Flip()
+    public void Flip(bool _faceUp)
     {
-        sr.sprite = faceSprite;
-        faceUp = !faceUp;
+        faceUp = _faceUp;
+
+        if (faceUp) { sr.sprite = faceSprite; }
+        else { sr.sprite = backSprite; }
     }
 
     public void SetTargetPos(Vector3 newPos)

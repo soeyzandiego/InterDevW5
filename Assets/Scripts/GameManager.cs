@@ -28,9 +28,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] Transform playerPos;
     [SerializeField] Transform opponentPos;
     [SerializeField] Transform cardPlayPos;
+    [SerializeField] Transform discardPos;
 
     [Header("Positioning Parameters")]
-    [SerializeField][Range(0.1f, 3)] public float hoverAmount = 1f;
+    [SerializeField][Range(0.1f, 3)] float hoverAmount = 1f;
+    [SerializeField][Range(0.1f, 3)] float handSpacing = 1f;
+    [SerializeField][Range(0.025f, 0.8f)] float stackSpacing = 0.05f;
 
     bool active = false;
 
@@ -61,7 +64,7 @@ public class GameManager : MonoBehaviour
                     active = true;
                     int cardIndex = Random.Range(0, playerHandCount);
                     Card cardToPlay = opponentHand[cardIndex];
-                    cardToPlay.SetTargetPos(cardPlayPos.position);
+                    cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, 1.2f, 0));
                     opponentHand.Remove(cardToPlay);
                     pOpponentCard = cardToPlay;
                     StartCoroutine(WaitAndChangeState(GameState.PLAYER));
@@ -72,7 +75,7 @@ public class GameManager : MonoBehaviour
             case GameState.PLAYER:
                 foreach (Card card in playerHand) 
                 {
-                    card.Flip();
+                    { card.Flip(true); }
 
                     if (card.IsHovered())
                     {
@@ -82,7 +85,7 @@ public class GameManager : MonoBehaviour
                         {
                             active = true;
                             Card cardToPlay = card;
-                            cardToPlay.SetTargetPos(cardPlayPos.position);
+                            cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, -1.2f, 0));
                             playerHand.Remove(cardToPlay);
                             pPlayerCard = cardToPlay;
                             StartCoroutine(WaitAndChangeState(GameState.RESOLVE));
@@ -94,11 +97,46 @@ public class GameManager : MonoBehaviour
                         card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y));
                     }
                 }
-
             break;
 
             case GameState.RESOLVE:
+                if (!active)
+                {
+                    active = true;
+                    pOpponentCard.Flip(true);
+                    Resolver.Resolve(pOpponentCard, pPlayerCard);
+                    StartCoroutine(WaitAndChangeState(GameState.DISCARD));
+                }
+            break;
 
+            case GameState.DISCARD:
+                if (pOpponentCard != null)
+                {
+                    // opponent chosen card
+                    if (!active)
+                    { 
+                        StartCoroutine(DiscardCard(pOpponentCard));
+                        pOpponentCard = null;
+                    }
+                }
+                else if (pPlayerCard != null)
+                {
+                    if (!active) 
+                    { 
+                        StartCoroutine(DiscardCard(pPlayerCard));
+                        pPlayerCard = null;
+                    }
+                }
+                else if (opponentHand.Count > 0)
+                {
+                    // opponent hand
+                   if (!active) { StartCoroutine(DiscardCard(opponentHand)); }
+                }
+                else if (playerHand.Count > 0)
+                {
+                    if (!active) { StartCoroutine(DiscardCard(playerHand)); }
+                }
+                
             break;
         }
     }
@@ -114,7 +152,7 @@ public class GameManager : MonoBehaviour
             Vector3 newPos;
             if (handToDeal == playerHand) { newPos = playerPos.position; }
             else { newPos = opponentPos.position; }
-            newPos.x += 2f * handToDeal.Count;
+            newPos.x += handSpacing * handToDeal.Count;
 
             nextCard.SetTargetPos(newPos);
             handToDeal.Add(nextCard);
@@ -125,11 +163,41 @@ public class GameManager : MonoBehaviour
         active = false;
     }
 
+    IEnumerator DiscardCard(List<Card> targetList)
+    {
+        active = true;
+
+        if (targetList.Count > 0)
+        {
+            Card discardCard = targetList[targetList.Count - 1]; // grab top card
+            discardCard.Flip(true);
+            discardCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count));
+            discardCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.discardPile.Count;
+            DeckManager.discardPile.Add(discardCard);
+            targetList.Remove(discardCard);
+            yield return new WaitForSecondsRealtime(delayTime);
+        }
+
+        active = false;
+    }
+
+    IEnumerator DiscardCard(Card targetCard)
+    {
+        active = true;
+
+        targetCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count));
+        targetCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.discardPile.Count;
+        DeckManager.discardPile.Add(targetCard);
+        yield return new WaitForSecondsRealtime(delayTime);
+
+        active = false;
+    }
+
     IEnumerator WaitAndChangeState(GameState newState)
     {
-        //active = true;
+        active = true;
         yield return new WaitForSecondsRealtime(delayTime);
         state = newState;
-        //active = false;
+        active = false;
     }
 }

@@ -8,21 +8,19 @@ public class DeckManager : MonoBehaviour
     [SerializeField] CardType[] cardTypes;
     [SerializeField] int deckCount;
 
-    public static List<Card> deck = new List<Card>();
+    [System.NonSerialized] public static List<Card> deck = new List<Card>();
+    [System.NonSerialized] public static List<Card> discardPile = new List<Card>();
 
     void Start()
     {
         for (int i = 0; i < deckCount; i++)
         {
-            GameObject newCard = Instantiate(cardPrefab, gameObject.transform);
+            GameObject newCard = Instantiate(cardPrefab, transform);
+            newCard.transform.position += new Vector3(0, 0.05f * i);    
+            newCard.GetComponent<SpriteRenderer>().sortingOrder = i;
             Card newCardScript = newCard.GetComponent<Card>();
             newCardScript.SetCardType(cardTypes[i % 3]);
             deck.Add(newCardScript);
         }   
-    }
-
-    public List<Card> GetDeck()
-    {
-        return deck;
     }
 }
