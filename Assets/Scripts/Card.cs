@@ -14,7 +14,7 @@ public class Card : MonoBehaviour
     CardValue value;
 
     static float moveSpeed = 0.045f;
-    static float tweenAmount = 1.2f;
+    static float tweenAmount = 0.5f;
 
     Animator anim;
 

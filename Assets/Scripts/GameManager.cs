@@ -45,6 +45,7 @@ public class GameManager : MonoBehaviour
     [SerializeField][Range(0.025f, 0.8f)] float stackSpacing = 0.05f;
 
     bool active = false;
+    bool hovering = false;
 
     AudioPlayer audioPlayer;
     Resolver resolver;
@@ -97,8 +98,12 @@ public class GameManager : MonoBehaviour
                 {
                     { card.Flip(true); }
 
+                    if (!hovering) { card.SetTargetAlpha(1f); }
+
                     if (card.IsHovered())
                     {
+                        hovering = true;
+
                         card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y + hoverAmount), false);
                         foreach (Card nonHover in playerHand) { nonHover.SetTargetAlpha(0.5f); }
                         card.SetTargetAlpha(1f);
@@ -111,6 +116,7 @@ public class GameManager : MonoBehaviour
                             playerHand.Remove(cardToPlay);
                             pPlayerCard = cardToPlay;
 
+                            pOpponentCard.Flip(true);
                             StartCoroutine(WaitAndChangeState(GameState.RESOLVE, 1f));
                             break;
                         }
@@ -118,7 +124,7 @@ public class GameManager : MonoBehaviour
                     }
                     else
                     {
-                        card.SetTargetAlpha(1f);
+                        hovering = false;
                         card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y), false);
                     }
                 }
@@ -128,9 +134,8 @@ public class GameManager : MonoBehaviour
                 if (!active)
                 {
                     active = true;
-                    pOpponentCard.Flip(true);
                     resolver.Resolve(pOpponentCard, pPlayerCard);
-                    StartCoroutine(WaitAndChangeState(GameState.DISCARD, 1f));
+                    StartCoroutine(WaitAndChangeState(GameState.DISCARD, 1.25f));
                 }
             break;
 

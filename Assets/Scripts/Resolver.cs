@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Resolver : MonoBehaviour
 {
+    [SerializeField] Animator highlightAnim;
+
     [Header("Audio")]
     [SerializeField] AudioClip winSound;
     [SerializeField] AudioClip loseSound;
@@ -75,6 +77,7 @@ public class Resolver : MonoBehaviour
     void Tie()
     {
         audioPlayer.PlaySound(tieSound);
+        highlightAnim.SetTrigger("flash");
     }
 
     void Win()
@@ -88,7 +91,7 @@ public class Resolver : MonoBehaviour
     {
         GameManager.opponentScore++;
         audioPlayer.PlaySound(loseSound);
-        screenShake.ShakeScreen(0.2f, 0.3f);
+        screenShake.ShakeScreen(0.12f, 0.3f);
         losePart.Play();
     }
 }
