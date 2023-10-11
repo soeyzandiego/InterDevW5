@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,14 +19,18 @@ public class GameManager : MonoBehaviour
     };
 
     [System.NonSerialized] public static GameState state; // does not actually get serialized anyways, but for consistency
-    [System.NonSerialized] public static int opponentScore;
-    [System.NonSerialized] public static int playerScore;
 
     // stored cards
     [System.NonSerialized] public List<Card> playerHand = new List<Card>();
     [System.NonSerialized] public List<Card> opponentHand = new List<Card>();
     Card pOpponentCard; // played opponent card
     Card pPlayerCard;   // played player card
+
+    [Header("Scoring")]
+    [SerializeField] TMP_Text opponentText;
+    [SerializeField] TMP_Text playerText;
+    [System.NonSerialized] public static int opponentScore;
+    [System.NonSerialized] public static int playerScore;
 
     [Header("Card Position References")]
     [SerializeField] Transform playerPos;
@@ -42,16 +47,21 @@ public class GameManager : MonoBehaviour
 
     AudioPlayer audioPlayer;
     Resolver resolver;
+    ScreenShake screenShake;
 
     private void Start()
     {
         state = GameState.DEAL;
         audioPlayer = FindObjectOfType<AudioPlayer>();
         resolver = FindObjectOfType<Resolver>();
+        screenShake = FindObjectOfType<ScreenShake>();
     }
 
     private void Update()
     {
+        opponentText.text = opponentScore.ToString();
+        playerText.text = playerScore.ToString();
+
         switch (state)
         {
             case GameState.DEAL:
@@ -96,7 +106,7 @@ public class GameManager : MonoBehaviour
                             cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, -1.2f, 0));
                             playerHand.Remove(cardToPlay);
                             pPlayerCard = cardToPlay;
-                            StartCoroutine(WaitAndChangeState(GameState.RESOLVE, delayTime));
+                            StartCoroutine(WaitAndChangeState(GameState.RESOLVE, 1f));
                             break;
                         }
                     }
@@ -152,7 +162,18 @@ public class GameManager : MonoBehaviour
                         else { StartCoroutine(WaitAndChangeState(GameState.RESHUFFLE, delayTime)); }
                     }
                 }
-                
+            break;
+
+            case GameState.RESHUFFLE:
+                if (!active) 
+                { 
+                    if (DeckManager.discardPile.Count > 0) { StartCoroutine(MoveBackToDeck()); }
+                    else if (!DeckManager.shuffled) 
+                    { 
+                        StartCoroutine(ShuffleAnim()); 
+                    }
+                    else { StartCoroutine(WaitAndChangeState(GameState.DEAL, 1f)); }
+                }
             break;
         }
     }
@@ -176,7 +197,7 @@ public class GameManager : MonoBehaviour
             DeckManager.deck.Remove(nextCard);
 
             audioPlayer.PlayDrawSound();
-            yield return new WaitForSecondsRealtime(delayTime);
+            yield return new WaitForSeconds(delayTime);
         }
         active = false;
     }
@@ -195,7 +216,7 @@ public class GameManager : MonoBehaviour
             targetList.Remove(discardCard);
 
             audioPlayer.PlayDrawSound();
-            yield return new WaitForSecondsRealtime(delayTime);
+            yield return new WaitForSeconds(delayTime);
         }
 
         active = false;
@@ -210,7 +231,62 @@ public class GameManager : MonoBehaviour
         DeckManager.discardPile.Add(targetCard);
 
         audioPlayer.PlayDrawSound();
-        yield return new WaitForSecondsRealtime(delayTime);
+        yield return new WaitForSeconds(delayTime);
+
+        active = false;
+    }
+
+    IEnumerator MoveBackToDeck()
+    {
+        active = true;
+        DeckManager.shuffled = false;
+
+        Vector3 deckPos = FindObjectOfType<DeckManager>().transform.position;
+
+        if (DeckManager.discardPile.Count > 0)
+        {           
+            Card cardToMove = DeckManager.discardPile[DeckManager.discardPile.Count - 1];
+            cardToMove.SetTargetPos(deckPos + new Vector3(0, stackSpacing * DeckManager.deck.Count));
+            cardToMove.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.deck.Count;
+            cardToMove.Flip(false);
+            DeckManager.deck.Add(cardToMove);
+            DeckManager.discardPile.Remove(cardToMove);
+            audioPlayer.PlayDrawSound();
+            screenShake.ShakeScreen(0.09f, 0.02f);
+
+            yield return new WaitForSeconds(0.05f);
+        }
+
+        active = false;
+    }
+
+    IEnumerator ShuffleAnim()
+    {
+        active = true;
+
+        Vector3 deckPos = FindObjectOfType<DeckManager>().transform.position;
+
+        // shuffle animation
+        for (int i = 0; i < DeckManager.deck.Count; i++)
+        {
+            Card topCard = DeckManager.deck[DeckManager.deck.Count - 1];
+            topCard.SetTargetPos(deckPos + new Vector3(0, stackSpacing * DeckManager.deck.Count));
+            topCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.deck.Count;
+            DeckManager.deck.Remove(topCard);
+            DeckManager.deck.Insert(0, topCard);
+
+            yield return new WaitForSeconds(0.035f);
+        }
+
+        Shuffler.ShuffleCards(DeckManager.deck);
+        DeckManager.shuffled = true;
+
+        for (int i = 0; i < DeckManager.deck.Count; i++)
+        {
+            Card card = DeckManager.deck[i];
+            card.SetTargetPos(deckPos + new Vector3(0, stackSpacing * i));
+            card.GetComponent<SpriteRenderer>().sortingOrder = i;
+        }
 
         active = false;
     }
@@ -218,7 +294,7 @@ public class GameManager : MonoBehaviour
     IEnumerator WaitAndChangeState(GameState newState, float delay)
     {
         active = true;
-        yield return new WaitForSecondsRealtime(delay);
+        yield return new WaitForSeconds(delay);
         state = newState;
         active = false;
     }

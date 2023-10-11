@@ -11,16 +11,25 @@ public class DeckManager : MonoBehaviour
     [System.NonSerialized] public static List<Card> deck = new List<Card>();
     [System.NonSerialized] public static List<Card> discardPile = new List<Card>();
 
+    [System.NonSerialized] public static bool shuffled = false;
+
     void Start()
     {
         for (int i = 0; i < deckCount; i++)
         {
             GameObject newCard = Instantiate(cardPrefab, transform);
-            newCard.transform.position += new Vector3(0, 0.05f * i);    
-            newCard.GetComponent<SpriteRenderer>().sortingOrder = i;
+            newCard.name = i.ToString();
             Card newCardScript = newCard.GetComponent<Card>();
             newCardScript.SetCardType(cardTypes[i % 3]);
             deck.Add(newCardScript);
-        }   
+        }
+        Shuffler.ShuffleCards(deck);
+        shuffled = true;
+        for (int i = 0; i < deck.Count; i++)
+        {
+            Card card = deck[i];
+            card.transform.position += new Vector3(0, 0.05f * i);
+            card.GetComponent<SpriteRenderer>().sortingOrder = i;
+        }
     }
 }

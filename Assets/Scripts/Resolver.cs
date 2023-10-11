@@ -9,10 +9,12 @@ public class Resolver : MonoBehaviour
     [SerializeField] AudioClip tieSound;
 
     AudioPlayer audioPlayer;
+    ScreenShake screenShake;
 
     void Start()
     {
         audioPlayer = FindObjectOfType<AudioPlayer>();
+        screenShake = FindObjectOfType<ScreenShake>();
     }
 
     public void Resolve(Card opponentCard, Card playerCard)
@@ -79,5 +81,6 @@ public class Resolver : MonoBehaviour
     {
         GameManager.opponentScore++;
         audioPlayer.PlaySound(loseSound);
+        screenShake.ShakeScreen(0.4f, 0.3f);
     }
 }
