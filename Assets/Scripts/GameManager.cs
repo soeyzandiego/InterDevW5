@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
 
     public enum GameState
     {
+        PAUSE,
         DEAL,
         OPPONENT,
         PLAYER,
@@ -18,7 +19,7 @@ public class GameManager : MonoBehaviour
         RESHUFFLE
     };
 
-    [System.NonSerialized] public static GameState state; // does not actually get serialized anyways, but for consistency
+    [System.NonSerialized] public static GameState state = GameState.PAUSE; // does not actually get serialized anyways, but for consistency
 
     // stored cards
     [System.NonSerialized] public List<Card> playerHand = new List<Card>();
@@ -51,10 +52,11 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        state = GameState.DEAL;
+        state = GameState.PAUSE;
         audioPlayer = FindObjectOfType<AudioPlayer>();
         resolver = FindObjectOfType<Resolver>();
         screenShake = FindObjectOfType<ScreenShake>();
+        StartCoroutine(WaitAndChangeState(GameState.DEAL, 1f));
     }
 
     private void Update()
@@ -82,7 +84,7 @@ public class GameManager : MonoBehaviour
                     active = true;
                     int cardIndex = Random.Range(0, playerHandCount);
                     Card cardToPlay = opponentHand[cardIndex];
-                    cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, 1.2f, 0));
+                    cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, 1.2f, 0), false);
                     opponentHand.Remove(cardToPlay);
                     pOpponentCard = cardToPlay;
                     StartCoroutine(WaitAndChangeState(GameState.PLAYER, delayTime));
@@ -97,22 +99,27 @@ public class GameManager : MonoBehaviour
 
                     if (card.IsHovered())
                     {
-                        card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y + hoverAmount));
+                        card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y + hoverAmount), false);
+                        foreach (Card nonHover in playerHand) { nonHover.SetTargetAlpha(0.5f); }
+                        card.SetTargetAlpha(1f);
                         // select card
                         if (Input.GetMouseButtonDown(0))
                         {
                             active = true;
                             Card cardToPlay = card;
-                            cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, -1.2f, 0));
+                            cardToPlay.SetTargetPos(cardPlayPos.position + new Vector3(0, -1.2f, 0), false);
                             playerHand.Remove(cardToPlay);
                             pPlayerCard = cardToPlay;
+
                             StartCoroutine(WaitAndChangeState(GameState.RESOLVE, 1f));
                             break;
                         }
+
                     }
                     else
                     {
-                        card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y));
+                        card.SetTargetAlpha(1f);
+                        card.SetTargetPos(new Vector3(card.transform.position.x, playerPos.position.y), false);
                     }
                 }
             break;
@@ -191,7 +198,7 @@ public class GameManager : MonoBehaviour
             else { newPos = opponentPos.position; }
             newPos.x += handSpacing * handToDeal.Count;
 
-            nextCard.SetTargetPos(newPos);
+            nextCard.SetTargetPos(newPos, true);
             handToDeal.Add(nextCard);
             if (handToDeal == playerHand) { nextCard.inHand = true; }
             DeckManager.deck.Remove(nextCard);
@@ -210,7 +217,7 @@ public class GameManager : MonoBehaviour
         {
             Card discardCard = targetList[targetList.Count - 1]; // grab top card
             discardCard.Flip(true);
-            discardCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count));
+            discardCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count), true);
             discardCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.discardPile.Count;
             DeckManager.discardPile.Add(discardCard);
             targetList.Remove(discardCard);
@@ -226,7 +233,7 @@ public class GameManager : MonoBehaviour
     {
         active = true;
 
-        targetCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count));
+        targetCard.SetTargetPos(discardPos.position + new Vector3(0, stackSpacing * DeckManager.discardPile.Count), true);
         targetCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.discardPile.Count;
         DeckManager.discardPile.Add(targetCard);
 
@@ -246,13 +253,13 @@ public class GameManager : MonoBehaviour
         if (DeckManager.discardPile.Count > 0)
         {           
             Card cardToMove = DeckManager.discardPile[DeckManager.discardPile.Count - 1];
-            cardToMove.SetTargetPos(deckPos + new Vector3(0, stackSpacing * DeckManager.deck.Count));
+            cardToMove.SetTargetPos(deckPos + new Vector3(0, stackSpacing * DeckManager.deck.Count), false);
             cardToMove.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.deck.Count;
             cardToMove.Flip(false);
             DeckManager.deck.Add(cardToMove);
             DeckManager.discardPile.Remove(cardToMove);
             audioPlayer.PlayDrawSound();
-            screenShake.ShakeScreen(0.09f, 0.02f);
+            screenShake.ShakeScreen(0.06f, 0.02f);
 
             yield return new WaitForSeconds(0.05f);
         }
@@ -270,10 +277,11 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < DeckManager.deck.Count; i++)
         {
             Card topCard = DeckManager.deck[DeckManager.deck.Count - 1];
-            topCard.SetTargetPos(deckPos + new Vector3(0, stackSpacing * DeckManager.deck.Count));
+            topCard.SetTargetPos(deckPos + new Vector3(0, stackSpacing * DeckManager.deck.Count), false);
             topCard.GetComponent<SpriteRenderer>().sortingOrder = DeckManager.deck.Count;
             DeckManager.deck.Remove(topCard);
             DeckManager.deck.Insert(0, topCard);
+            audioPlayer.PlayDrawSound();
 
             yield return new WaitForSeconds(0.035f);
         }
@@ -284,7 +292,7 @@ public class GameManager : MonoBehaviour
         for (int i = 0; i < DeckManager.deck.Count; i++)
         {
             Card card = DeckManager.deck[i];
-            card.SetTargetPos(deckPos + new Vector3(0, stackSpacing * i));
+            card.SetTargetPos(deckPos + new Vector3(0, stackSpacing * i), false);
             card.GetComponent<SpriteRenderer>().sortingOrder = i;
         }
 

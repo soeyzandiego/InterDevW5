@@ -4,9 +4,15 @@ using UnityEngine;
 
 public class Resolver : MonoBehaviour
 {
+    [Header("Audio")]
     [SerializeField] AudioClip winSound;
     [SerializeField] AudioClip loseSound;
     [SerializeField] AudioClip tieSound;
+
+    [Header("Particles")]
+    [SerializeField] ParticleSystem winPart;
+    [SerializeField] ParticleSystem losePart;
+
 
     AudioPlayer audioPlayer;
     ScreenShake screenShake;
@@ -75,12 +81,14 @@ public class Resolver : MonoBehaviour
     {
         GameManager.playerScore++;
         audioPlayer.PlaySound(winSound);
+        winPart.Play();
     }
 
     void Lose()
     {
         GameManager.opponentScore++;
         audioPlayer.PlaySound(loseSound);
-        screenShake.ShakeScreen(0.4f, 0.3f);
+        screenShake.ShakeScreen(0.2f, 0.3f);
+        losePart.Play();
     }
 }
